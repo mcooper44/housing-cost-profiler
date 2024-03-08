@@ -56,7 +56,7 @@ class a_listing:
                 self.perks.get('Pet Friendly', None)]
 
 
-def get_page(url=MAIN_STR):
+def get_page(url=MAIN_STR: str):
     '''
     make a request to get the result
     using the requests library
@@ -83,7 +83,7 @@ def parse_result(request):
     else:
         raise 'No data.  Request failed.'
 
-def test_listing(url=link):
+def test_listing(url=link: str) -> dict:
     '''
     grab a listing and test the functions
     to parse the page and pull out the key
@@ -147,11 +147,13 @@ def get_l_key(link):
     return link.split('/')[-1]
 
 
-def process_links(links, csv_file='housing_list.csv', base='https://www.kijiji.ca'):
+def process_links(links: list, csv_file='housing_list.csv': str,
+                  base='https://www.kijiji.ca': str) -> list:
     '''
     take a list of listing links from a search
     and scrape the features from the list of listings
     and return a list of the feature objects (a_listing)
+    as well as writing listing features to a file.
     '''
     listings = []
     for link in links:
@@ -171,11 +173,11 @@ def process_links(links, csv_file='housing_list.csv', base='https://www.kijiji.c
         listings.append(l)
         #print(','.join(l.get_base_str()))
         interval = 3 + randint(1,10)
-        #sleep(interval)
+        sleep(interval)
     return listings
 
 
-def get_l_details_dl(data):
+def get_l_details_dl(data) -> dict:
     '''
     https://stackoverflow.com/questions/32475700/using-beautifulsoup-to-extract-specific-dl-and-dd-list-elements
     Most of the headings in the listing are in dl>dt>dd
@@ -195,7 +197,7 @@ def get_l_details_dl(data):
     return dict(zip(k,v))
 
 
-def get_l_details_h4(data):
+def get_l_details_h4(data) -> dict:
     '''
     Extract the listing features from the
     individual listing
@@ -239,7 +241,7 @@ def get_l_details_h4(data):
     return _struct
 
 
-def get_l_title_details(data):
+def get_l_title_details(data) -> dict:
     '''
     Extract the title, price, price note and address
     from the individual listing page
@@ -271,7 +273,7 @@ def get_l_title_details(data):
     return dict(zip(details, detail_str))
 
 
-def get_l_unit_type(data):
+def get_l_unit_type(data) -> dict:
     '''
     Extract unit type (house, 1 bedroom etc)
     Bedrooms and # of bathrooms
@@ -288,7 +290,7 @@ def get_l_unit_type(data):
     return dict(zip(details, detail_str))
 
 
-def write_csv(file_name, line):
+def write_csv(file_name: str, line: list) -> None:
     '''
     write a line to file_name - this function
     will append a line to the file and is called
@@ -300,7 +302,7 @@ def write_csv(file_name, line):
         writer.writerow(line)
 
 
-def generate_url_list(n):
+def generate_url_list(n: int) -> list:
     '''
     generates the list of urls to page through
     and strip links out of
@@ -324,5 +326,5 @@ def main():
         link_list = get_links(data)
         listing_objs = process_links(link_list)
         print(f'processed {len(listing_objs)} links')
-        print('taking a nap for 30 seconds')
+        print('taking a nap for 10 seconds')
         time.sleep(10)
