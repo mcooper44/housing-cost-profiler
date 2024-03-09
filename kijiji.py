@@ -56,7 +56,7 @@ class a_listing:
                 self.perks.get('Pet Friendly', None)]
 
 
-def get_page(url=MAIN_STR: str):
+def get_page(url: str):
     '''
     make a request to get the result
     using the requests library
@@ -83,7 +83,7 @@ def parse_result(request):
     else:
         raise 'No data.  Request failed.'
 
-def test_listing(url=link: str) -> dict:
+def test_listing(url: str=link) -> dict:
     '''
     grab a listing and test the functions
     to parse the page and pull out the key
@@ -147,8 +147,8 @@ def get_l_key(link):
     return link.split('/')[-1]
 
 
-def process_links(links: list, csv_file='housing_list.csv': str,
-                  base='https://www.kijiji.ca': str) -> list:
+def process_links(links: list, csv_file: str='housing_list.csv',
+                  base: str='https://www.kijiji.ca') -> list:
     '''
     take a list of listing links from a search
     and scrape the features from the list of listings
@@ -159,16 +159,11 @@ def process_links(links: list, csv_file='housing_list.csv': str,
     for link in links:
         target = f'{base}{link}'
         key = get_l_key(target)
-        print(target)
         page = get_page(target)
         data = parse_result(page)
         f, f2 = get_l_features(data)
-        #print('f')
-        #print(f)
-        #print('f2')
-        #print(f2)
         l = create_a_listing(key, f, f2)
-        out = l.get_base_str() + [str(date.today())] 
+        out = l.get_base_str() + [str(date.today())]
         write_csv(csv_file, out)
         listings.append(l)
         #print(','.join(l.get_base_str()))
@@ -321,7 +316,7 @@ def main():
     url_list = generate_url_list(PAGES)
     for url in url_list:
         print(url)
-        page = get_page()
+        page = get_page(url)
         data = parse_result(page)
         link_list = get_links(data)
         listing_objs = process_links(link_list)
