@@ -305,7 +305,9 @@ def generate_url_list(s: int, n: int) -> list:
     the structure of the url is to append PAGE
     between TARGET and END after page 1
     '''
-    u = [MAIN_STR]
+    u = []
+    if s == 2:
+        u.append(MAIN_STR)
     for i in range(s, n):
         p = f'{PAGE}{i}/'
         s = BASE + TARGET + p + END
@@ -314,7 +316,7 @@ def generate_url_list(s: int, n: int) -> list:
 
 def main(s: int=START, n: int=PAGES):
     listing_file = H_FILE
-    url_list = generate_url_list(PAGES)
+    url_list = generate_url_list(s,n)
     for url in url_list:
         print(url)
         page = get_page(url)
