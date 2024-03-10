@@ -21,7 +21,8 @@ HEADER = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:122.0) Gecko
          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8'}
 
 H_FILE = 'housing_list.csv'
-PAGES = 18
+START = 2 # start for pages of listings
+PAGES = 18 # end for range of pages of listings
 
 
 @dataclass
@@ -297,7 +298,7 @@ def write_csv(file_name: str, line: list) -> None:
         writer.writerow(line)
 
 
-def generate_url_list(n: int) -> list:
+def generate_url_list(s: int, n: int) -> list:
     '''
     generates the list of urls to page through
     and strip links out of
@@ -305,21 +306,27 @@ def generate_url_list(n: int) -> list:
     between TARGET and END after page 1
     '''
     u = [MAIN_STR]
-    for i in range(2, n):
+    for i in range(s, n):
         p = f'{PAGE}{i}/'
         s = BASE + TARGET + p + END
         u.append(s)
     return u
 
-def main():
+def main(s: int=START, n: int=PAGES):
     listing_file = H_FILE
     url_list = generate_url_list(PAGES)
     for url in url_list:
         print(url)
         page = get_page(url)
-        data = parse_result(page)
-        link_list = get_links(data)
-        listing_objs = process_links(link_list)
-        print(f'processed {len(listing_objs)} links')
+        if page:
+            data = parse_result(page)
+            try:
+                link_list = get_links(data)
+                listing_objs = process_links(link_list)
+                print(f'processed {len(listing_objs)} links')
+            except:
+                print('failed link processing')
+        else:
+            print('failed request')
         print('taking a nap for 10 seconds')
         time.sleep(10)
