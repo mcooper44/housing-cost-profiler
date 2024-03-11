@@ -21,7 +21,7 @@ HEADER = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:122.0) Gecko
          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8'}
 
 H_FILE = 'housing_list.csv'
-START = 2 # start for pages of listings
+START = 2 # start for pages of listings - is always between 2 and n
 PAGES = 18 # end for range of pages of listings
 
 
@@ -152,24 +152,40 @@ def process_links(links: list, csv_file: str='housing_list.csv',
                   base: str='https://www.kijiji.ca') -> list:
     '''
     take a list of listing urls from a search
-    and scrape the features from the listing at the url
-    and return a list of the feature objects (a_listing)
+    these urls are missing the base str which needs to be added back
+    it will iterate through this list and extract the unique key and
+    scrape the features from the listing at the url
+    returning a list of the feature objects (a_listing)
     as well as writing listing features to a file.
+
+    the feature objects will be leveraged to create database
+    entry's downstream
     '''
     listings = []
-    for link in links:
+    for link in links: 
+        f = None
+        f2 = None
+        l = None
+        # get key, html and parse it
         target = f'{base}{link}'
-        key = get_l_key(target)
-        page = get_page(target)
-        data = parse_result(page)
-        f, f2 = get_l_features(data)
-        l = create_a_listing(key, f, f2)
-        out = l.get_base_str() + [str(date.today())]
-        write_csv(csv_file, out)
-        listings.append(l)
-        #print(','.join(l.get_base_str()))
-        interval = 3 + randint(1,10)
-        sleep(interval)
+        key = get_l_key(target) # grab unique listing key
+        page = get_page(target) # get html
+        data = parse_result(page) # parse with bs4
+        # extract features
+        try:
+            f, f2 = get_l_features(data)
+            l = create_a_listing(key, f, f2)
+        except:
+            print('could not extract features or create a_listing')
+        if l:
+            out = l.get_base_str() + [str(date.today())]
+            write_csv(csv_file, out)
+            listings.append(l)
+            #print(','.join(l.get_base_str()))
+            interval = 3 + randint(1,10)
+            sleep(interval)
+        else:
+            print('failed write to csv: no data')
     return listings
 
 
