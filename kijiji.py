@@ -151,8 +151,8 @@ def get_l_key(link):
 def process_links(links: list, csv_file: str='housing_list.csv',
                   base: str='https://www.kijiji.ca') -> list:
     '''
-    take a list of listing links from a search
-    and scrape the features from the list of listings
+    take a list of listing urls from a search
+    and scrape the features from the listing at the url
     and return a list of the feature objects (a_listing)
     as well as writing listing features to a file.
     '''
@@ -332,3 +332,4 @@ def main(s: int=START, n: int=PAGES):
             print('failed request')
         print('taking a nap for 10 seconds')
         time.sleep(10)
+    print('job complete')
