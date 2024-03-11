@@ -195,9 +195,9 @@ def get_l_details_dl(data) -> dict:
 
 def get_l_details_h4(data) -> dict:
     '''
-    Extract the listing features from the
-    individual listing
-    h4's list the following headings:
+    Extract the features from the
+    individual listing captured in html headings
+    h4's list the following features:
     Wi-Fi and More, Appliances,
     Personal Outdoor Space, Amenities
     '''
@@ -217,12 +217,9 @@ def get_l_details_h4(data) -> dict:
             # Utilities uses SVG's in a UL
             svg = ul[0].select('svg', attrs={'aria-label': True})
             if svg: # we have labels
-                try:
-                    for tag in svg:
-                        _struct[heading].append(tag['aria-label'])
-                        #print('-', tag['aria-label'])
-                except:
-                    pass
+                for tag in svg:
+                    _struct[heading].append(tag['aria-label'])
+                    #print('-', tag['aria-label'])
             # if li are present - iterate through them
             li = ul[0].select('li')
             if li and not svg:
