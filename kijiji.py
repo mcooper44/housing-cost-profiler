@@ -10,12 +10,17 @@ import time
 
 # url is build from..
 BASE = 'https://www.kijiji.ca'
+
 TARGET = '/b-apartments-condos/kitchener-waterloo/apartment__condo/'
+TARGET2 = '/b-apartments-condos/kitchener-waterloo/house/'
+TARGETS = [TARGET,TARGET2]
+
 END = 'c37l1700212a29276001' # not sure what this is for - but it is essential
 PAGE = 'page-'
 
 MAIN_STR = 'https://www.kijiji.ca/b-apartments-condos/kitchener-waterloo/apartment__condo/c37l1700212a29276001'
 MAIN_STR2 = 'https://www.kijiji.ca/b-apartments-condos/kitchener-waterloo/house/c37l1700212a29276001'
+
 # for testing functions for individual listings
 link = 'https://www.kijiji.ca/v-apartments-condos/kitchener-waterloo/fantastic-2-bedroom-2-bathroom-for-rent-in-kitchener/1676802832'
 
@@ -233,11 +238,14 @@ def get_l_details_h4(data) -> dict:
         ul = h4.parent.select('ul') # check the parent
         if len(ul) > 0:
             # Utilities uses SVG's in a UL
-            svg = ul[0].select('svg', attrs={'aria-label': True})
-            if svg: # we have labels
-                for tag in svg:
-                    _struct[heading].append(tag['aria-label'])
-                    #print('-', tag['aria-label'])
+            try:
+                svg = ul[0].select('svg', attrs={'aria-label': True})
+                if svg: # we have labels
+                    for tag in svg:
+                        _struct[heading].append(tag['aria-label'])
+                        #print('-', tag['aria-label'])
+            except: # 'Additional Options'
+                _struct[heading].append('Nothing')
             # if li are present - iterate through them
             li = ul[0].select('li')
             if li and not svg:
@@ -313,19 +321,20 @@ def write_csv(file_name: str, line: list) -> None:
         writer.writerow(line)
 
 
-def generate_url_list(s: int, n: int, root: str) -> list:
+def generate_url_list(s: int, n: int, root: str, TI: int, T: list=TARGETS) -> list:
     '''
     generates the list of urls to page through
     and strip links out of
     the structure of the url is to append PAGE
     between TARGET and END after page 1
+    
     '''
     u = []
     if s == 2:
         u.append(root)
     for i in range(s, n):
-        p = f'{PAGE}{i}/'
-        s = BASE + TARGET + p + END
+        P = f'{PAGE}{i}/'
+        s = BASE + T[TI] + P + END
         u.append(s)
     return u
 
@@ -352,9 +361,9 @@ def process_pages(url_list: list) -> None:
 
 def main(s: int=START, n: int=PAGES):
     listing_file = H_FILE
-    roots = [MAIN_STR, MAIN_STR2]
-    for root in roots:
-        url_list = generate_url_list(s,n,root)
+    roots = [(MAIN_STR,0), (MAIN_STR2,1)]
+    for root, i in roots:
+        url_list = generate_url_list(s,n,root,i)
         process_pages(url_list)
         print('taking a nap for 10 seconds')
         time.sleep(10)
