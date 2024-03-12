@@ -13,7 +13,9 @@ BASE = 'https://www.kijiji.ca'
 TARGET = '/b-apartments-condos/kitchener-waterloo/apartment__condo/'
 END = 'c37l1700212a29276001' # not sure what this is for - but it is essential
 PAGE = 'page-'
+
 MAIN_STR = 'https://www.kijiji.ca/b-apartments-condos/kitchener-waterloo/apartment__condo/c37l1700212a29276001'
+MAIN_STR2 = 'https://www.kijiji.ca/b-apartments-condos/kitchener-waterloo/house/c37l1700212a29276001'
 # for testing functions for individual listings
 link = 'https://www.kijiji.ca/v-apartments-condos/kitchener-waterloo/fantastic-2-bedroom-2-bathroom-for-rent-in-kitchener/1676802832'
 
@@ -311,7 +313,7 @@ def write_csv(file_name: str, line: list) -> None:
         writer.writerow(line)
 
 
-def generate_url_list(s: int, n: int) -> list:
+def generate_url_list(s: int, n: int, root: str) -> list:
     '''
     generates the list of urls to page through
     and strip links out of
@@ -320,16 +322,19 @@ def generate_url_list(s: int, n: int) -> list:
     '''
     u = []
     if s == 2:
-        u.append(MAIN_STR)
+        u.append(root)
     for i in range(s, n):
         p = f'{PAGE}{i}/'
         s = BASE + TARGET + p + END
         u.append(s)
     return u
 
-def main(s: int=START, n: int=PAGES):
-    listing_file = H_FILE
-    url_list = generate_url_list(s,n)
+def process_pages(url_list: list) -> None:
+    '''
+    operates on list of urls, fetches the html
+    parses the html, trys to extract features
+    and writes them to a csv file.
+    '''
     for url in url_list:
         print(url)
         page = get_page(url)
@@ -343,6 +348,14 @@ def main(s: int=START, n: int=PAGES):
                 print('failed link processing')
         else:
             print('failed request')
+
+
+def main(s: int=START, n: int=PAGES):
+    listing_file = H_FILE
+    roots = [MAIN_STR, MAIN_STR2]
+    for root in roots:
+        url_list = generate_url_list(s,n,root)
+        process_pages(url_list)
         print('taking a nap for 10 seconds')
         time.sleep(10)
     print('job complete')
