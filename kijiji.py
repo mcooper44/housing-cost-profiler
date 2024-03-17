@@ -13,13 +13,19 @@ BASE = 'https://www.kijiji.ca'
 
 TARGET = '/b-apartments-condos/kitchener-waterloo/apartment__condo/'
 TARGET2 = '/b-apartments-condos/kitchener-waterloo/house/'
-TARGETS = [TARGET,TARGET2]
+TARGET3 = '/b-apartments-condos/cambridge/'
 
 END = 'c37l1700212a29276001' # not sure what this is for - but it is essential
+END2 = 'c37l1700210'
 PAGE = 'page-'
+
+TARGETS = [(BASE,TARGET,END),
+           (BASE,TARGET2,END),
+           (BASE,TARGET3,END2)]
 
 MAIN_STR = 'https://www.kijiji.ca/b-apartments-condos/kitchener-waterloo/apartment__condo/c37l1700212a29276001'
 MAIN_STR2 = 'https://www.kijiji.ca/b-apartments-condos/kitchener-waterloo/house/c37l1700212a29276001'
+MAIN_STR3 = BASE + TARGET3 + END2
 
 # for testing functions for individual listings
 link = 'https://www.kijiji.ca/v-apartments-condos/kitchener-waterloo/fantastic-2-bedroom-2-bathroom-for-rent-in-kitchener/1676802832'
@@ -321,20 +327,24 @@ def write_csv(file_name: str, line: list) -> None:
         writer.writerow(line)
 
 
-def generate_url_list(s: int, n: int, root: str, TI: int, T: list=TARGETS) -> list:
+def generate_url_list(s: int, n: int, root: str, url_parts: tuple) -> list:
     '''
     generates the list of urls to page through
     and strip links out of
     the structure of the url is to append PAGE
     between TARGET and END after page 1
-    
+    because the url is constructed differently
+    depending on the community root and url_parts
+    will need to vary depending on the base starting
+    url for the community we are targeting
     '''
     u = []
+    base, target, end = url_parts
     if s == 2:
         u.append(root)
     for i in range(s, n):
         P = f'{PAGE}{i}/'
-        s = BASE + T[TI] + P + END
+        s = base + target + P + end
         u.append(s)
     return u
 
@@ -361,9 +371,11 @@ def process_pages(url_list: list) -> None:
 
 def main(s: int=START, n: int=PAGES):
     listing_file = H_FILE
-    roots = [(MAIN_STR,0), (MAIN_STR2,1)]
-    for root, i in roots:
-        url_list = generate_url_list(s,n,root,i)
+    roots = [(MAIN_STR3,TARGETS[2]),
+             (MAIN_STR2,TARGETS[1]),
+             (MAIN_STR,TARGETS[0])]
+    for root, parts in roots:
+        url_list = generate_url_list(s,n,root,parts)
         process_pages(url_list)
         print('taking a nap for 10 seconds')
         time.sleep(10)
