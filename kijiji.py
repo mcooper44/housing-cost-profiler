@@ -70,6 +70,10 @@ class a_listing:
                 self.perks.get('Pet Friendly', None)]
 
     def get_listing(self):
+        '''
+        return tuple of data needed
+        to provision the Listing table
+        '''
         return (self.listing_id,
                 self.bedrooms,
                 self.bathrooms,
@@ -78,9 +82,35 @@ class a_listing:
                 self.price)
 
     def get_address(self):
+        '''
+        method to parse address will take some time
+        '''
+        pass
+
+    def get_description(self):
+        return (self.listing_id,
+                f"{self.headline}, {self.attrs.get('item_str', None}")
+
+    def get_url(self):
+        pass
+
+    def get_features(self):
+        return (self.listing_id,
+                self.perks.get('Parking Included', -1),
+                self.perks.get('Furnished', None),
+                self.perks.get('Smoking Permitted', None),
+                self.perks.get('Air Conditioning', None),
+                self.perks.get('Pet Friendly', None))
+
+    def get_utilities(self):
         pass
 
 
+    def get_amenities(self):
+        pass
+
+    def get_appliances(self):
+        pass
 def get_page(url: str):
     '''
     make a request to get the result
@@ -186,7 +216,7 @@ def process_links(links: list, csv_file: str='housing_list.csv',
     entry's downstream
     '''
     listings = []
-    for link in links: 
+    for link in links:
         f = None
         f2 = None
         l = None
