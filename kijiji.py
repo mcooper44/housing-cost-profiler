@@ -69,6 +69,17 @@ class a_listing:
                 self.perks.get('Air Conditioning', None),
                 self.perks.get('Pet Friendly', None)]
 
+    def get_listing(self):
+        return (self.listing_id,
+                self.bedrooms,
+                self.bathrooms,
+                self.sqft,
+                self.perks.get('Agreement Type', None),
+                self.price)
+
+    def get_address(self):
+        pass
+
 
 def get_page(url: str):
     '''
