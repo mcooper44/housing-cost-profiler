@@ -1,7 +1,7 @@
 from ez_address_parser import AddressParser
+from typing import Union
 
-
-def process_ap(lst, lbl, max_rep=2):
+def process_ap(lst: list, lbl: str, max_rep: int=2):
     '''
     take an ez-address-parser list and a specific
     label and return a string made of up thos elements
@@ -15,7 +15,7 @@ def process_ap(lst, lbl, max_rep=2):
                 r.append(v)
     return ' '.join(r) if r else None
 
-def get_sa(lst):
+def get_sa(lst: list) -> Union[str, None]:
     '''
     call process_ap with a list of street
     address labels to recompose the street address
@@ -32,7 +32,7 @@ def get_sa(lst):
     return ' '.join(s) if s else None
 
 
-def process_address(address):
+def process_address(address: list) -> tuple:
     '''
     leverage ez-address-parser to process the address string
     into labelled element, label pairs
@@ -48,3 +48,6 @@ def process_address(address):
     pcode = process_ap(t, 'PostalCode')
     street = get_sa(t)
     return (street, city, pcode)
+
+
+def process_utility(utility: list) -> dict:
