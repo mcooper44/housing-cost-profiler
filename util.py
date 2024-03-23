@@ -21,11 +21,10 @@ def get_sa(lst):
     return ' '.join(s) if s else None
 
 
-
-def parse_address(address):
+def process_address(address):
     ap = AddressParser()
     t = ap.parse(address)
     city = process_ap(t, 'Municipality', 1)
     pcode = process_ap(t, 'PostalCode')
     street = get_sa(t)
-
+    return (street, city, pcode)
