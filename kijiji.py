@@ -28,7 +28,7 @@ MAIN_STR2 = 'https://www.kijiji.ca/b-apartments-condos/kitchener-waterloo/house/
 MAIN_STR3 = BASE + TARGET3 + END2
 
 # for testing functions for individual listings
-link = 'https://www.kijiji.ca/v-apartments-condos/kitchener-waterloo/fantastic-2-bedroom-2-bathroom-for-rent-in-kitchener/1676802832'
+link ='https://www.kijiji.ca/v-apartments-condos/cambridge/cambridge-1-bedroom-apartment-for-rent:/1670519580'
 
 HEADER = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:122.0) Gecko/20100101 Firefox/122.0',
          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8'}
@@ -51,6 +51,7 @@ class a_listing:
     util_headline: str
     attrs: dict # get_l_details_dl
     perks: dict # get_l_details_h4
+    url: str
 
     def get_base_str(self):
         return  [self.listing_id, self.address,
@@ -85,14 +86,14 @@ class a_listing:
         '''
         method to parse address will take some time
         '''
-        pass
+        return self.address
 
     def get_description(self):
         return (self.listing_id,
-                f"{self.headline}, {self.attrs.get('item_str', None}")
+                f"{self.headline}, {self.attrs.get('item_str', None)}")
 
     def get_url(self):
-        pass
+        return self.url
 
     def get_features(self):
         return (self.listing_id,
@@ -103,14 +104,15 @@ class a_listing:
                 self.perks.get('Pet Friendly', None))
 
     def get_utilities(self):
-        pass
-
+        return self.perks.get('Utilities Included', None)
 
     def get_amenities(self):
-        pass
+        return self.perks.get('Amenities', None)
 
     def get_appliances(self):
-        pass
+        return self.perks.get('Appliances', None)
+
+
 def get_page(url: str):
     '''
     make a request to get the result
@@ -184,7 +186,7 @@ def get_links(data):
     return links
 
 
-def create_a_listing(lid, f, f2):
+def create_a_listing(lid, f, f2, url):
     '''
     instantiates the a_listing dataclass
     '''
@@ -228,7 +230,7 @@ def process_links(links: list, csv_file: str='housing_list.csv',
         # extract features
         try:
             f, f2 = get_l_features(data)
-            l = create_a_listing(key, f, f2)
+            l = create_a_listing(key, f, f2, target)
         except:
             print('could not extract features or create a_listing')
         if l:
@@ -269,7 +271,12 @@ def get_l_details_h4(data) -> dict:
     individual listing captured in html headings
     h4's list the following features:
     Wi-Fi and More, Appliances,
-    Personal Outdoor Space, Amenities
+    Personal Outdoor Space, Amenities,
+    Utilities Included
+
+    returns a dictionary with each heading as a key
+    and a list containing the contents stripped from
+    the listing
     '''
     h = None
     _struct = {}
