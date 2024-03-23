@@ -2,6 +2,11 @@ from ez_address_parser import AddressParser
 
 
 def process_ap(lst, lbl, max_rep=2):
+    '''
+    take an ez-address-parser list and a specific
+    label and return a string made of up thos elements
+    e.g. postal code, municipality
+    '''
     r = []
     for t in lst:
         v,l = t
@@ -11,6 +16,12 @@ def process_ap(lst, lbl, max_rep=2):
     return ' '.join(r) if r else None
 
 def get_sa(lst):
+    '''
+    call process_ap with a list of street
+    address labels to recompose the street address
+    into a distinct string for logging in the dbase
+    '''
+
     ls = ['StreetNumber', 'StreetName', 'StreetType',
           'StreetDirection']
     s = []
@@ -22,6 +33,15 @@ def get_sa(lst):
 
 
 def process_address(address):
+    '''
+    leverage ez-address-parser to process the address string
+    into labelled element, label pairs
+
+    call the helper functions process_ap and get_sa to separate
+    out the elements needed for the database
+
+    return a tuple of (street string, city string, postal code string)
+    '''
     ap = AddressParser()
     t = ap.parse(address)
     city = process_ap(t, 'Municipality', 1)
