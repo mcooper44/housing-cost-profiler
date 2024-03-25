@@ -40,14 +40,36 @@ def process_address(address: list) -> tuple:
     call the helper functions process_ap and get_sa to separate
     out the elements needed for the database
 
-    return a tuple of (street string, city string, postal code string)
+    return a list of (street string, city string, postal code string)
     '''
     ap = AddressParser()
     t = ap.parse(address)
     city = process_ap(t, 'Municipality', 1)
     pcode = process_ap(t, 'PostalCode')
+    prov = process_ap(t, 'Province')
     street = get_sa(t)
-    return (street, city, pcode)
+    return (street, city, prov, pcode)
 
 
-def process_utility(utility: list) -> dict:
+def process_utility(utility: list) -> tuple:
+    '''
+    recieves the 'Utilities Included'
+    output from a_listing method which is a list
+    and returns a dictionary keyed by utility
+    '''
+    d = {}
+    lu = {'No': 0, 'Yes': 1}
+    for utl in utility:
+        v = utl.split(':')
+        if len(v) == 2:
+            d[v[1].strip()] = lu.get(v[0], -1)
+    return (d.get('Hydro', -1), d.get('Water', -1), d.get('Heat', -1))
+
+def process_appliance(LID: int, apps: list) -> tuple:
+    return [(LID, app) for app in apps]
+
+def process_price(p):
+    try:
+        return int(p.translate(str.maketrans('', '', '$,')))
+    except:
+        return -1
