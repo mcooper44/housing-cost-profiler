@@ -7,6 +7,11 @@ import csv
 from random import randint
 from datetime import date
 import time
+from util import process_address
+from util import process_utility
+from util import process_appliance
+from util import process_price
+
 
 # url is build from..
 BASE = 'https://www.kijiji.ca'
@@ -40,14 +45,14 @@ PAGES = 18 # end for range of pages of listings
 
 @dataclass
 class a_listing:
-    listing_id: str
+    listing_id: int
     address: str
     price: str
     unit_type: str
     bedrooms: str
     bathrooms: str
     sqft: str
-    headline: str
+    headline: str 
     util_headline: str
     attrs: dict # get_l_details_dl
     perks: dict # get_l_details_h4
@@ -74,26 +79,29 @@ class a_listing:
         '''
         return tuple of data needed
         to provision the Listing table
+        listing_id -> int
+        price -> float
         '''
         return (self.listing_id,
                 self.bedrooms,
                 self.bathrooms,
                 self.sqft,
-                self.perks.get('Agreement Type', None),
-                self.price)
+                self.perks.get('Agreement Type', 'Missing'),
+                process_price(self.price))
 
     def get_address(self):
         '''
         method to parse address will take some time
         '''
-        return self.address
+        return (self.listing_id, *process_address(self.address),
+                self.unit_type, self.address) 
 
-    def get_description(self):
+    def get_description(self) -> tuple:
         return (self.listing_id,
                 f"{self.headline}, {self.attrs.get('item_str', None)}")
 
-    def get_url(self):
-        return self.url
+    def get_url(self) -> tuple:
+        return (self.listing_id, self.url)
 
     def get_features(self):
         return (self.listing_id,
@@ -106,10 +114,10 @@ class a_listing:
     def get_utilities(self):
         return self.perks.get('Utilities Included', None)
 
-    def get_amenities(self):
+    def get_amenities(self) -> list:
         return self.perks.get('Amenities', None)
 
-    def get_appliances(self):
+    def get_appliances(self) -> list:
         return self.perks.get('Appliances', None)
 
 
@@ -191,7 +199,7 @@ def create_a_listing(lid, f, f2, url):
     instantiates the a_listing dataclass
     '''
     #print(f'creating a listing for {lid}')
-    return a_listing(lid,f['address'],f['price'],f['unit_type'],\
+    return a_listing(int(lid),f['address'],f['price'],f['unit_type'],\
                      f['bedrooms'],f['bathrooms'],f2['Size (sqft)'],\
                      f['title_str'],f['util_headline'],f, f2)
 
