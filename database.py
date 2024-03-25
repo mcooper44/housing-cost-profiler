@@ -2,7 +2,7 @@ import sqlite3
 
 DBSCHEMA = ('''CREATE TABLE Listing
             (LID INTEGER NOT NULL PRIMARY KEY, Bedrooms TEXT, Bathrooms TEXT,
-            Sqft INTEGER, AgreeType TEXT, Price REAL)''',
+            Sqft TEXT, AgreeType TEXT, Price INTEGER)''',
             '''CREATE TABLE Address (LID INTEGER, StreetAddress TEXT,
             City TEXT, Prov TEXT, PCode TEXT, HType TEXT, FullStr TEXT,
             FOREIGN KEY(LID) REFERENCES Listing(LID))''',
@@ -106,8 +106,6 @@ class Database():
 
     def lookup(self, target, table, row, paramater):
         '''
-        SELECT {file_id} FROM {routes} WHERE {route_number}{ BETWEEN 50 AND 130}
-        SELECT {*} FROM {applicants} WHERE {file_id}{=123456}
         http://www.sqlitetutorial.net/sqlite-between/
         '''
         ex_string = f'SELECT {target} FROM {table} WHERE {row}{parameter}'
