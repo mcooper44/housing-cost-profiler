@@ -90,7 +90,7 @@ def process_item_list(LID: int, apps: list) -> tuple:
     '''
     return [(LID, app) for app in apps]
 
-def process_price(p):
+def process_price(p: str) -> int:
     '''
     Typically formatted $X,XXX or 'Please Contact'
     So try to extract the number formatting and return
@@ -104,4 +104,22 @@ def process_price(p):
     except:
         return -1
 
+def process_bb(bb_str: str) -> float:
+    '''
+    process bedroom and bathroom str
+    bathrooms will be an int (1-4+) or a float with a .5
+    bedrooms with be a range 1 to n and could include a Den
+    or be a 'Bachelor/Studio'
+    str will be in format Facility: N
+    i.e. Bedrooms 1 + Den or Bathrooms: 1.5
+    and is present in the u data structure
+    '''
+    fac, val = bb_str.split(':')
+    if fac == 'Bedrooms':
+        if 'Bachelor/Studio' in val:
+            return 0
+        if ' + Den' in val:
+            v = val.split('+')
+            return float(v[0].strip()) + 0.5)
+    return float(val.strip())
 
