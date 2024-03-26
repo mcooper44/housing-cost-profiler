@@ -21,7 +21,9 @@ DBSCHEMA = ('''CREATE TABLE Listing
             '''CREATE TABLE Amenities (LID INTEGER, Item TEXT, FOREIGN
             KEY(LID) REFERENCES Listing(LID))''',
             '''CREATE TABLE Appliances (LID INTEGER, Appliance TEXT, FOREIGN
-            KEY(LID) REFERENCES Listing(LID))''')
+            KEY(LID) REFERENCES Listing(LID))''',
+           '''CREATE TABLE Space (LID INTEGER, OutDoorSpace TEXT, FOREIGN
+            KEY(LID REFERENCES Listing(LID)''')
 
 class Database():
     '''
