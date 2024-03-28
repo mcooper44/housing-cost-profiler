@@ -11,7 +11,7 @@ from util import process_address
 from util import process_utility
 from util import process_appliance
 from util import process_price
-
+from util import process_bb
 
 # url is build from..
 BASE = 'https://www.kijiji.ca'
@@ -52,13 +52,16 @@ class a_listing:
     bedrooms: str
     bathrooms: str
     sqft: str
-    headline: str 
+    headline: str
     util_headline: str
     attrs: dict # get_l_details_dl
     perks: dict # get_l_details_h4
     url: str
 
     def get_base_str(self):
+        '''
+        method for testing/validating
+        '''
         return  [self.listing_id, self.address,
                 self.price, self.unit_type,
                 self.bedrooms, self.bathrooms,
@@ -67,6 +70,9 @@ class a_listing:
                 self.perks.get('Air Conditioning','N/A')]
 
     def get_attributes(self):
+        '''
+        method for testing/validating
+        '''
         return [self.perks.get('Agreement Type', None),
                 self.perks.get('Move-In Date', None),
                 self.perks.get('Parking Included', None),
@@ -83,18 +89,18 @@ class a_listing:
         price -> float
         '''
         return (self.listing_id,
-                self.bedrooms,
-                self.bathrooms,
-                self.sqft,
+                process_bb(self.bedrooms),
+                process_bb(self.bathrooms),
+                process_numeric(self.sqft, 'Not Available'),
                 self.perks.get('Agreement Type', 'Missing'),
-                process_price(self.price))
+                process_numeric(self.price, 'Please Contact'))
 
     def get_address(self):
         '''
         method to parse address will take some time
         '''
         return (self.listing_id, *process_address(self.address),
-                self.unit_type, self.address) 
+                self.unit_type, self.address)
 
     def get_description(self) -> tuple:
         return (self.listing_id,
