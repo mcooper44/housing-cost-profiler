@@ -90,14 +90,19 @@ def process_item_list(LID: int, apps: list) -> tuple:
     '''
     return [(LID, app) for app in apps]
 
-def process_price(p: str) -> int:
+def process_numeric(n: str, default) -> int:
     '''
-    Typically formatted $X,XXX or 'Please Contact'
+    takes numerical value stored as a str
+    like price or sqft and the default value inserted
+    when it is not provided
+    and returns the numical value as an integer
+    Typically price is formatted $X,XXX or 'Please Contact'
+    Sqft is either a number or 'Not Available'
     So try to extract the number formatting and return
     an integer.
     Price is in the data stripped out of the title
     '''
-    if p == 'Please Contact':
+    if p == default:
         return -1
     try:
         return int(p.translate(str.maketrans('', '', '$,')))
