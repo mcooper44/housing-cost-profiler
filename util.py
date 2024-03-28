@@ -90,7 +90,7 @@ def process_item_list(LID: int, apps: list) -> tuple:
     '''
     return [(LID, app) for app in apps]
 
-def process_numeric(n: str, default) -> int:
+def process_numeric(n: str, default: str) -> int:
     '''
     takes numerical value stored as a str
     like price or sqft and the default value inserted
