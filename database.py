@@ -1,8 +1,9 @@
 import sqlite3
 
 DBSCHEMA = ('''CREATE TABLE Listing
-            (LID INTEGER NOT NULL PRIMARY KEY, Bedrooms TEXT, Bathrooms TEXT,
-            Sqft TEXT, AgreeType TEXT, Price INTEGER)''',
+            (LID INTEGER NOT NULL PRIMARY KEY, Bedrooms INTEGER, Bathrooms
+            INTEGER,
+            Sqft INTEGER, AgreeType TEXT, Price INTEGER)''',
             '''CREATE TABLE Address (LID INTEGER, StreetAddress TEXT,
             City TEXT, Prov TEXT, PCode TEXT, HType TEXT, FullStr TEXT,
             FOREIGN KEY(LID) REFERENCES Listing(LID))''',
