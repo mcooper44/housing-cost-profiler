@@ -128,3 +128,17 @@ def process_bb(bb_str: str) -> float:
             return float(v[0].strip()) + 0.5)
     return float(val.strip())
 
+
+def process_yn(v: str) -> int:
+    '''
+    Parking Included, Furnished, Smoking Permitted,
+    Air Conditioning, Pet Friendly features are all
+    a binary Yes/No value so this function
+    transforms them to 1 (yes) 0 (no) -1 missing/error
+    '''
+    if v == 'Yes':
+        return 1
+    if v == 'No':
+        return 0
+    return -1
+
