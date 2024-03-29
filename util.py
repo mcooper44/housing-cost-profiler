@@ -102,10 +102,10 @@ def process_numeric(n: str, default: str) -> int:
     an integer.
     Price is in the data stripped out of the title
     '''
-    if p == default:
+    if n == default:
         return -1
     try:
-        return int(p.translate(str.maketrans('', '', '$,')))
+        return int(n.translate(str.maketrans('', '', '$,')))
     except:
         return -1
 
@@ -125,7 +125,7 @@ def process_bb(bb_str: str) -> float:
             return 0
         if ' + Den' in val:
             v = val.split('+')
-            return float(v[0].strip()) + 0.5)
+            return float(v[0].strip()) + 0.5
     return float(val.strip())
 
 

@@ -9,8 +9,8 @@ from datetime import date
 import time
 from util import process_address
 from util import process_utility
-from util import process_appliance
-from util import process_price
+from util import process_item_list
+from util import process_numeric
 from util import process_bb
 
 # url is build from..
@@ -207,7 +207,7 @@ def create_a_listing(lid, f, f2, url):
     #print(f'creating a listing for {lid}')
     return a_listing(int(lid),f['address'],f['price'],f['unit_type'],\
                      f['bedrooms'],f['bathrooms'],f2['Size (sqft)'],\
-                     f['title_str'],f['util_headline'],f, f2)
+                     f['title_str'],f['util_headline'],f, f2, url)
 
 
 def get_l_key(link):
