@@ -12,6 +12,8 @@ from util import process_utility
 from util import process_item_list
 from util import process_numeric
 from util import process_bb
+from util import process_yn
+
 
 # url is build from..
 BASE = 'https://www.kijiji.ca'
@@ -60,7 +62,7 @@ class a_listing:
 
     def get_base_str(self):
         '''
-        method for testing/validating
+        for writing out to csv
         '''
         return  [self.listing_id, self.address,
                 self.price, self.unit_type,
@@ -111,20 +113,20 @@ class a_listing:
 
     def get_features(self):
         return (self.listing_id,
-                self.perks.get('Parking Included', -1),
-                self.perks.get('Furnished', None),
-                self.perks.get('Smoking Permitted', None),
-                self.perks.get('Air Conditioning', None),
-                self.perks.get('Pet Friendly', None))
+                process_numeric(self.perks.get('Parking Included', -1),None),
+                process_yn(self.perks.get('Furnished', None)),
+                process_yn(self.perks.get('Smoking Permitted', None)),
+                process_yn(self.perks.get('Air Conditioning', None)),
+                process_yn(self.perks.get('Pet Friendly', None)))
 
-    def get_utilities(self):
-        return self.perks.get('Utilities Included', None)
+    def get_utilities(self) -> tuple:
+        return process_utility(self.perks.get('Utilities Included', None))
 
     def get_amenities(self) -> list:
-        return self.perks.get('Amenities', None)
+        return process_item_list(self.listing_id, self.perks.get('Amenities', None))
 
     def get_appliances(self) -> list:
-        return self.perks.get('Appliances', None)
+        return process_item_list(self.listing_id, self.perks.get('Appliances', None))
 
 
 def get_page(url: str):
@@ -171,6 +173,15 @@ def test_listing(url: str=link) -> dict:
             't': t_features,
             'u': u_features,
             'data': data}
+
+def test_a_listing():
+        target = link
+        key = get_l_key(target) # grab unique listing key
+        page = get_page(target) # get html
+        data = parse_result(page) # parse with bs4
+        # extract features
+        f, f2 = get_l_features(data)
+        return create_a_listing(key, f, f2, target)
 
 
 def get_l_features(data):
