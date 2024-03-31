@@ -7,13 +7,13 @@ import csv
 from random import randint
 from datetime import date
 import time
-from util import process_address
-from util import process_utility
-from util import process_item_list
-from util import process_numeric
-from util import process_bb
-from util import process_yn
-
+from h_util import process_address
+from h_util import process_utility
+from h_util import process_item_list
+from h_util import process_numeric
+from h_util import process_bb
+from h_util import process_yn
+from database import Database
 
 # url is build from..
 BASE = 'https://www.kijiji.ca'
@@ -42,7 +42,7 @@ HEADER = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:122.0) Gecko
 
 H_FILE = 'housing_list.csv'
 START = 2 # start for pages of listings - is always between 2 and n
-PAGES = 18 # end for range of pages of listings
+PAGES = 5 # end for range of pages of listings
 
 
 @dataclass
@@ -120,13 +120,20 @@ class a_listing:
                 process_yn(self.perks.get('Pet Friendly', None)))
 
     def get_utilities(self) -> tuple:
-        return process_utility(self.perks.get('Utilities Included', None))
+        return (self.listing_id,
+                *process_utility(self.perks.get('Utilities Included', None)))
 
     def get_amenities(self) -> list:
-        return process_item_list(self.listing_id, self.perks.get('Amenities', None))
+        return process_item_list(self.listing_id, \
+                                 self.perks.get('Amenities', None))
 
     def get_appliances(self) -> list:
-        return process_item_list(self.listing_id, self.perks.get('Appliances', None))
+        return process_item_list(self.listing_id, \
+                                 self.perks.get('Appliances', 'Missing'))
+
+    def get_space(self) -> list:
+        return process_item_list(self.listing_id, \
+                                 self.perks.get('Personal Outdoor Space', 'Missing'))
 
 
 def get_page(url: str):
@@ -229,7 +236,7 @@ def get_l_key(link):
     return link.split('/')[-1]
 
 
-def process_links(links: list, csv_file: str='housing_list.csv',
+def process_links(links: list, dbh, csv_file: str='housing_list.csv',
                   base: str='https://www.kijiji.ca') -> list:
     '''
     take a list of listing urls from a search
@@ -242,7 +249,6 @@ def process_links(links: list, csv_file: str='housing_list.csv',
     the feature objects will be leveraged to create database
     entry's downstream
     '''
-    listings = []
     for link in links:
         f = None
         f2 = None
@@ -260,14 +266,20 @@ def process_links(links: list, csv_file: str='housing_list.csv',
             print('could not extract features or create a_listing')
         if l:
             out = l.get_base_str() + [str(date.today())]
-            write_csv(csv_file, out)
-            listings.append(l)
-            #print(','.join(l.get_base_str()))
-            interval = 3 + randint(1,10)
+            try:
+                write_csv(csv_file, out)
+                #print(','.join(l.get_base_str()))
+            except:
+                print('failed to write to csv')
+            try:
+                insert_l2db(l, dbh)
+            except:
+                print('failed to write to db')
+            interval = 3 #+ randint(1,10)
             sleep(interval)
         else:
-            print('failed write to csv: no data')
-    return listings
+            print('failed write to csv and database')
+
 
 
 def get_l_details_dl(data) -> dict:
@@ -421,7 +433,52 @@ def generate_url_list(s: int, n: int, root: str, url_parts: tuple) -> list:
         u.append(s)
     return u
 
-def process_pages(url_list: list) -> None:
+def gen_l_struct(lo) -> dict:
+    '''
+    call the listing methods to format the
+    features into tuples that can be inserted
+    into the database then return a data structure
+    with the table name, and the format elements
+    needed to insert it into the database
+    by calling the .insert method of the database
+    which expects this structure
+    '''
+    l_tab = ([lo.get_listing()], '(?,?,?,?,?,?)')
+    a_tab = ([lo.get_address()], '(?,?,?,?,?,?,?)')
+    d_tab = ([lo.get_description()], '(?,?)')
+    u_tab = ([lo.get_url()], '(?,?)')
+    f_tab = ([lo.get_features()], '(?,?,?,?,?,?)')
+    utl_tab = ([lo.get_utilities()], '(?,?,?,?)')
+    am_tab = ([x for x in lo.get_amenities()], '(?,?)')
+    app_tab = ([x for x in lo.get_appliances()], '(?,?)')
+    s_tab = ([x for x in lo.get_space()], '(?,?)')
+    return {'Listing': l_tab,
+            'Address': a_tab,
+            'Description': d_tab,
+            'url': u_tab,
+            'Features': f_tab,
+            'Utilities': utl_tab,
+            'Amenities': am_tab,
+            'Appliances': app_tab,
+            'Space': s_tab}
+
+def insert_l2db(o, db_handle) -> None:
+    '''
+    insert into database a datastructure of
+    'table name': ([tuple of n data points],'(?,...n)')
+    and using the db_handle.insert() method
+    compose an INSERT string with 'table name'
+    and VALUES '(?,...n)' and insert the n data points
+    or if there is a list composed by the listing.method
+    iterate through that data and insert it sequentially
+
+    o is a listing object
+    '''
+    db_struct = gen_l_struct(o)
+    print(db_struct)
+    db_handle.insert(db_struct,echo=True)
+
+def process_pages(url_list: list, dbh=None) -> None:
     '''
     operates on list of urls, fetches the html
     parses the html, trys to extract features
@@ -434,8 +491,16 @@ def process_pages(url_list: list) -> None:
             data = parse_result(page)
             try:
                 link_list = get_links(data)
-                listing_objs = process_links(link_list)
+                '''
+                 now process the links
+                 - create listing objects
+                 - write a summary to the csv
+                 - ???
+                 - profit
+                '''
+                process_links(link_list, dbh)
                 print(f'processed {len(listing_objs)} links')
+                #insert_l2db(listing_obj, dbh)
             except:
                 print('failed link processing')
         else:
@@ -444,12 +509,17 @@ def process_pages(url_list: list) -> None:
 
 def main(s: int=START, n: int=PAGES):
     listing_file = H_FILE
-    roots = [(MAIN_STR3,TARGETS[2]),
+    roots = [(MAIN_STR,TARGETS[0]),
              (MAIN_STR2,TARGETS[1]),
-             (MAIN_STR,TARGETS[0])]
-    for root, parts in roots:
-        url_list = generate_url_list(s,n,root,parts)
-        process_pages(url_list)
-        print('taking a nap for 10 seconds')
-        time.sleep(10)
+             (MAIN_STR3,TARGETS[2])]
+    the_db = Database('housing.sqlite3')
+    the_db.connect()
+    try:
+        for root, parts in roots:
+            url_list = generate_url_list(s,n,root,parts)
+            process_pages(url_list, the_db)
+            print('taking a nap for 5 seconds')
+            time.sleep(5)
+    except:
+        the_db.close()
     print('job complete')
