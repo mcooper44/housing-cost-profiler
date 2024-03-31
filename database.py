@@ -24,7 +24,7 @@ DBSCHEMA = ('''CREATE TABLE Listing
             '''CREATE TABLE Appliances (LID INTEGER, Appliance TEXT, FOREIGN
             KEY(LID) REFERENCES Listing(LID))''',
            '''CREATE TABLE Space (LID INTEGER, OutDoorSpace TEXT, FOREIGN
-            KEY(LID REFERENCES Listing(LID)''')
+            KEY(LID) REFERENCES Listing(LID))''')
 
 class Database():
     '''
@@ -70,8 +70,8 @@ class Database():
         '''
         takes a dictionary 'data_struct' of
         'table name': ([(values_to_write,)], # list of tuple(s)
-                       '(?, [...])') # string tuple with a ? for each
-                                     # to insert
+                       '(? [...], ?)') string tuple with a ? for each
+                                     value to insert
 
         and iterates through the data structure inserting values
         into the tables used as keys in dictionary
@@ -164,10 +164,3 @@ class Database():
             print(f'connection to {name} closed')
         except:
             print('could not close connection')
-
-class k_interface:
-    def __init__(self, dbase):
-        self.database = dbase
-        pass
-
-
