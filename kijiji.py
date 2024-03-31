@@ -43,7 +43,7 @@ HEADER = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:122.0) Gecko
 H_FILE = 'housing_list.csv'
 START = 2 # start for pages of listings - is always between 2 and n
 PAGES = 5 # end for range of pages of listings
-
+TDATE = str(date.today()) # todays date
 
 @dataclass
 class a_listing:
@@ -106,7 +106,7 @@ class a_listing:
 
     def get_description(self) -> tuple:
         return (self.listing_id,
-                f"{self.headline}, {self.attrs.get('item_str', None)}")
+                f"{self.headline}")
 
     def get_url(self) -> tuple:
         return (self.listing_id, self.url)
@@ -134,7 +134,8 @@ class a_listing:
     def get_space(self) -> list:
         return process_item_list(self.listing_id, \
                                  self.perks.get('Personal Outdoor Space', 'Missing'))
-
+    def get_today(self) -> tuple:
+        return (self.listing_id, TDATE)
 
 def get_page(url: str):
     '''
@@ -265,7 +266,7 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
         except:
             print('could not extract features or create a_listing')
         if l:
-            out = l.get_base_str() + [str(date.today())]
+            out = l.get_base_str() + [TDATE]
             try:
                 write_csv(csv_file, out)
                 #print(','.join(l.get_base_str()))
@@ -452,6 +453,7 @@ def gen_l_struct(lo) -> dict:
     am_tab = ([x for x in lo.get_amenities()], '(?,?)')
     app_tab = ([x for x in lo.get_appliances()], '(?,?)')
     s_tab = ([x for x in lo.get_space()], '(?,?)')
+    date_tab = ([lo.get_today()], '(?,?)')
     return {'Listing': l_tab,
             'Address': a_tab,
             'Description': d_tab,
@@ -460,7 +462,8 @@ def gen_l_struct(lo) -> dict:
             'Utilities': utl_tab,
             'Amenities': am_tab,
             'Appliances': app_tab,
-            'Space': s_tab}
+            'Space': s_tab,
+            'Udate': date_tab}
 
 def insert_l2db(o, db_handle) -> None:
     '''
@@ -500,7 +503,6 @@ def process_pages(url_list: list, dbh=None) -> None:
                 '''
                 process_links(link_list, dbh)
                 print(f'processed {len(listing_objs)} links')
-                #insert_l2db(listing_obj, dbh)
             except:
                 print('failed link processing')
         else:

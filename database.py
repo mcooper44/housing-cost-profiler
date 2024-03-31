@@ -24,7 +24,9 @@ DBSCHEMA = ('''CREATE TABLE Listing
             '''CREATE TABLE Appliances (LID INTEGER, Appliance TEXT, FOREIGN
             KEY(LID) REFERENCES Listing(LID))''',
            '''CREATE TABLE Space (LID INTEGER, OutDoorSpace TEXT, FOREIGN
-            KEY(LID) REFERENCES Listing(LID))''')
+            KEY(LID) REFERENCES Listing(LID))''',
+           '''CREATE TABLE Udate (LID INTEGER, DateString TEXT, FOREIGN
+            KEY(LID) REFERENCES Listing(LID)''')
 
 class Database():
     '''
