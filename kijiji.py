@@ -7,6 +7,7 @@ import csv
 from random import randint
 from datetime import date
 import time
+import logging
 from h_util import process_address
 from h_util import process_utility
 from h_util import process_item_list
@@ -14,6 +15,10 @@ from h_util import process_numeric
 from h_util import process_bb
 from h_util import process_yn
 from database import Database
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='errors.log', encoding='utf-8', \
+                    level=logging.DEBUG)
 
 # url is build from..
 BASE = 'https://www.kijiji.ca'
@@ -129,11 +134,11 @@ class a_listing:
 
     def get_appliances(self) -> list:
         return process_item_list(self.listing_id, \
-                                 self.perks.get('Appliances', 'Missing'))
+                                 self.perks.get('Appliances', None))
 
     def get_space(self) -> list:
         return process_item_list(self.listing_id, \
-                                 self.perks.get('Personal Outdoor Space', 'Missing'))
+                                 self.perks.get('Personal Outdoor Space', None))
     def get_today(self) -> tuple:
         return (self.listing_id, TDATE)
 
@@ -206,7 +211,6 @@ def get_l_features(data):
     listing = {**dl_features, **h4_features}
     return title, listing
 
-
 def get_links(data):
     '''
     takes a BeautifulSoup parsed page of listings and
@@ -263,20 +267,28 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
         try:
             f, f2 = get_l_features(data)
             l = create_a_listing(key, f, f2, target)
-        except:
-            print('could not extract features or create a_listing')
+        except Exception as e:
+            logger.error('could not extract features or create a_listing')
+            logger.error(key, target)
+            logger.error(e)
         if l:
+
             out = l.get_base_str() + [TDATE]
+            structure = None
             try:
                 write_csv(csv_file, out)
                 #print(','.join(l.get_base_str()))
-            except:
-                print('failed to write to csv')
+            except Exception as e:
+                logger.info('failed to write to csv')
+                logger.error(e)
             try:
-                insert_l2db(l, dbh)
-            except:
-                print('failed to write to db')
-            interval = 3 #+ randint(1,10)
+                structure = insert_l2db(l, dbh)
+            except Exception as e:
+                logger.info('failed to write to db')
+                logger.error(e)
+                print(structure)
+                print(l)
+            interval = 3 + randint(1,5)
             sleep(interval)
         else:
             print('failed write to csv and database')
@@ -465,7 +477,7 @@ def gen_l_struct(lo) -> dict:
             'Space': s_tab,
             'Udate': date_tab}
 
-def insert_l2db(o, db_handle) -> None:
+def insert_l2db(o, db_handle) -> dict:
     '''
     insert into database a datastructure of
     'table name': ([tuple of n data points],'(?,...n)')
@@ -478,8 +490,8 @@ def insert_l2db(o, db_handle) -> None:
     o is a listing object
     '''
     db_struct = gen_l_struct(o)
-    print(db_struct)
-    db_handle.insert(db_struct,echo=True)
+    db_handle.insert(db_struct,echo=False)
+    return db_struct
 
 def process_pages(url_list: list, dbh=None) -> None:
     '''
@@ -488,7 +500,7 @@ def process_pages(url_list: list, dbh=None) -> None:
     and writes them to a csv file.
     '''
     for url in url_list:
-        print(url)
+        #print(url)
         page = get_page(url)
         if page:
             data = parse_result(page)
@@ -511,9 +523,9 @@ def process_pages(url_list: list, dbh=None) -> None:
 
 def main(s: int=START, n: int=PAGES):
     listing_file = H_FILE
-    roots = [(MAIN_STR,TARGETS[0]),
+    roots = [(MAIN_STR3,TARGETS[2]),
              (MAIN_STR2,TARGETS[1]),
-             (MAIN_STR3,TARGETS[2])]
+             (MAIN_STR,TARGETS[0])]
     the_db = Database('housing.sqlite3')
     the_db.connect()
     try:
