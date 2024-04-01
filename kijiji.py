@@ -46,9 +46,12 @@ HEADER = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:122.0) Gecko
          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8'}
 
 H_FILE = 'housing_list.csv'
+HDB = 'Housing.sqlite3'
+
 START = 2 # start for pages of listings - is always between 2 and n
 PAGES = 5 # end for range of pages of listings
 TDATE = str(date.today()) # todays date
+
 
 @dataclass
 class a_listing:
@@ -219,7 +222,7 @@ def get_links(data):
     cards = [f'listing-card-list-item-{n}' for n in range(0,40)]
     lstings = data.find_all('li', attrs={'data-testid': cards})
     links = [lstings[n].find_all('a', attrs={'data-testid': ['listing-link']})[0]['href'] for n in range(0, len(lstings))]
-    print(f'parsed {len(links)} links')
+    logger.info(f'parsed {len(links)} links')
     return links
 
 
@@ -227,7 +230,7 @@ def create_a_listing(lid, f, f2, url):
     '''
     instantiates the a_listing dataclass
     '''
-    #print(f'creating a listing for {lid}')
+    logger.info(f'creating a listing for {lid}')
     return a_listing(int(lid),f['address'],f['price'],f['unit_type'],\
                      f['bedrooms'],f['bathrooms'],f2['Size (sqft)'],\
                      f['title_str'],f['util_headline'],f, f2, url)
@@ -255,6 +258,7 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
     entry's downstream
     '''
     for link in links:
+        logger.info(f'working on: {link}') 
         f = None
         f2 = None
         l = None
@@ -269,7 +273,7 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
             l = create_a_listing(key, f, f2, target)
         except Exception as e:
             logger.error('could not extract features or create a_listing')
-            logger.error(key, target)
+            logger.error(f'{key}, {target}')
             logger.error(e)
         if l:
 
@@ -284,14 +288,14 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
             try:
                 structure = insert_l2db(l, dbh)
             except Exception as e:
-                logger.info('failed to write to db')
+                logger.warning('failed to write to db')
                 logger.error(e)
-                print(structure)
-                print(l)
+                logger.error(structure)
+                logger.error(l)
             interval = 3 + randint(1,5)
             sleep(interval)
         else:
-            print('failed write to csv and database')
+            logger.info('failed write to csv and database')
 
 
 
@@ -500,11 +504,12 @@ def process_pages(url_list: list, dbh=None) -> None:
     and writes them to a csv file.
     '''
     for url in url_list:
-        #print(url)
+        logger.info(f'working on: {url}')
         page = get_page(url)
         if page:
             data = parse_result(page)
             try:
+                logger.info('getting links')
                 link_list = get_links(data)
                 '''
                  now process the links
@@ -514,11 +519,11 @@ def process_pages(url_list: list, dbh=None) -> None:
                  - profit
                 '''
                 process_links(link_list, dbh)
-                print(f'processed {len(listing_objs)} links')
+                logger.info(f'processed {len(listing_objs)} links')
             except:
-                print('failed link processing')
+                logger.error('failed link processing')
         else:
-            print('failed request')
+            logger.error(f'failed request: {url}')
 
 
 def main(s: int=START, n: int=PAGES):
@@ -526,7 +531,7 @@ def main(s: int=START, n: int=PAGES):
     roots = [(MAIN_STR3,TARGETS[2]),
              (MAIN_STR2,TARGETS[1]),
              (MAIN_STR,TARGETS[0])]
-    the_db = Database('housing.sqlite3')
+    the_db = Database(HDB)
     the_db.connect()
     try:
         for root, parts in roots:
