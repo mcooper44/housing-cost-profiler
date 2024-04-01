@@ -50,7 +50,7 @@ HDB = 'Housing.sqlite3'
 
 START = 2 # start for pages of listings - is always between 2 and n
 PAGES = 5 # end for range of pages of listings
-TDATE = str(date.today()) # todays date
+TDATE = str(date.today())
 
 
 @dataclass
@@ -72,12 +72,23 @@ class a_listing:
         '''
         for writing out to csv
         '''
-        return  [self.listing_id, self.address,
-                self.price, self.unit_type,
-                self.bedrooms, self.bathrooms,
-                self.sqft, self.perks.get('Agreement Type', 'N/A'),
-                self.perks.get('Parking Included', 'N/A'),
-                self.perks.get('Air Conditioning','N/A')]
+        return  [self.listing_id,
+                 self.address,
+                 process_numeric(self.price, 'Please Contact'),
+                 self.unit_type,
+                 self.perks.get('Agreement Type', 'N/A'),
+                 process_bb(self.bedrooms),
+                 process_bb(self.bathrooms),
+                 process_numeric(self.sqft, 'Not Available'),
+                 self.perks.get('Move-In Date', None),
+                 process_numeric(self.perks.get('Parking Included', -1),None),
+                 process_yn(self.perks.get('Furnished', None)),
+                 process_yn(self.perks.get('Smoking Permitted', None)),
+                 process_yn(self.perks.get('Air Conditioning', None)),
+                 process_yn(self.perks.get('Pet Friendly', None)),
+                 *process_utility(self.perks.get('Utilities Included', None)),
+                 len(self.get_appliances())-1,
+                 len(self.get_amenities())-1]
 
     def get_attributes(self):
         '''
@@ -276,7 +287,6 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
             logger.error(f'key: {key}, target: {target} f:{f} f2:{f2}')
             logger.error(e)
         if l:
-
             out = l.get_base_str() + [TDATE]
             structure = None
             try:
@@ -287,7 +297,10 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
                 logger.error(e)
             try:
                 structure = insert_l2db(l, dbh)
-                logger.info('logged to db')
+                if structure == True:
+                    logger.info('already logged')
+                else:
+                    logger.info('logged to db')
             except Exception as e:
                 logger.warning('failed to write to db')
                 logger.error(e)
@@ -297,7 +310,6 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
             sleep(interval)
         else:
             logger.info('failed write to csv and database')
-
 
 
 def get_l_details_dl(data) -> dict:
@@ -482,6 +494,7 @@ def gen_l_struct(lo) -> dict:
             'Space': s_tab,
             'Udate': date_tab}
 
+
 def insert_l2db(o, db_handle) -> dict:
     '''
     insert into database a datastructure of
@@ -494,9 +507,19 @@ def insert_l2db(o, db_handle) -> dict:
 
     o is a listing object
     '''
-    db_struct = gen_l_struct(o)
-    db_handle.insert(db_struct,echo=False)
-    return db_struct
+    done = check_key(o.listing_id, db_handle)
+    if not done:
+        db_struct = gen_l_struct(o)
+        db_handle.insert(db_struct,echo=False)
+        return db_struct
+    else:
+        return True
+
+def check_key(LID, dbh) -> bool:
+    sql_str = f'SELECT LID FROM Listing WHERE LID={LID} LIMIT 1'
+    row = db_handle.lookup_string(sql_str, None)
+    return True if row else False
+
 
 def process_pages(url_list: list, dbh=None) -> None:
     '''
@@ -516,8 +539,7 @@ def process_pages(url_list: list, dbh=None) -> None:
                  now process the links
                  - create listing objects
                  - write a summary to the csv
-                 - ???
-                 - profit
+                 - write to the database
                 '''
                 process_links(link_list, dbh)
                 logger.info(f'processed {len(listing_objs)} links')
