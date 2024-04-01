@@ -95,7 +95,7 @@ def process_numeric(n: str, default: str) -> int:
     takes numerical value stored as a str
     like price or sqft and the default value inserted
     when it is not provided
-    and returns the numical value as an integer
+    and returns the numerical value as an integer
     Typically price is formatted $X,XXX or 'Please Contact'
     Sqft is either a number or 'Not Available'
     So try to extract the number formatting and return
