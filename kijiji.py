@@ -18,7 +18,7 @@ from database import Database
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='errors.log', encoding='utf-8', \
-                    level=logging.DEBUG)
+                    level=logging.INFO)
 
 # url is build from..
 BASE = 'https://www.kijiji.ca'
@@ -273,7 +273,7 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
             l = create_a_listing(key, f, f2, target)
         except Exception as e:
             logger.error('could not extract features or create a_listing')
-            logger.error(f'{key}, {target}')
+            logger.error(f'key: {key}, target: {target} f:{f} f2:{f2}')
             logger.error(e)
         if l:
 
@@ -287,6 +287,7 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
                 logger.error(e)
             try:
                 structure = insert_l2db(l, dbh)
+                logger.info('logged to db')
             except Exception as e:
                 logger.warning('failed to write to db')
                 logger.error(e)
