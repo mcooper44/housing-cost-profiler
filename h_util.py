@@ -88,7 +88,7 @@ def process_item_list(LID: int, apps: list) -> tuple:
     so this function pairs them with the LID
     in a tuple for easier insertion to the db
     '''
-    return [(LID, app) for app in apps]
+    return [(LID, app) for app in apps] if apps else [(LID, 'None')]
 
 def process_numeric(n: str, default: str) -> int:
     '''
@@ -105,7 +105,7 @@ def process_numeric(n: str, default: str) -> int:
     if n == default:
         return -1
     try:
-        return int(n.translate(str.maketrans('', '', '$,')))
+        return int(n.translate(str.maketrans('', '', '$,+')))
     except:
         return -1
 
@@ -126,6 +126,8 @@ def process_bb(bb_str: str) -> float:
         if ' + Den' in val:
             v = val.split('+')
             return float(v[0].strip()) + 0.5
+        if '5+' in val:
+            return 5.25
     return float(val.strip())
 
 
