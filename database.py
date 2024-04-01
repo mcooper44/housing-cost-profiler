@@ -90,26 +90,7 @@ class Database():
                     self.cur.execute(wr_str, tple_to_insert)
                     self.conn.commit()
 
-    def o2m_insert(self, visit, many):
-        '''
-        handles the one to many table insert for the database
-        '''
-        self.cur.execute(*visit)
-
-        pk = self.cur.lastrowid
-
-        for s in many:
-            if any((s)):
-                try:
-                    s1, s2 = s
-                    self.cur.execute(s1,(pk,*s2))
-                    self.conn.commit()
-                except Exception as insert_fail:
-                    print(f'{s1} with values {s2}')
-                    print('yielded...')
-                    print(insert_fail)
-
-    def lookup(self, target, table, row, paramater):
+    def lookup(self, target, table, row, parameter):
         '''
         http://www.sqlitetutorial.net/sqlite-between/
         '''
