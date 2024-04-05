@@ -18,7 +18,7 @@ from database import Database
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='errors.log', encoding='utf-8', \
-                    level=logging.INFO)
+                    level=logging.DEBUG)
 
 # url is build from..
 BASE = 'https://www.kijiji.ca'
@@ -161,11 +161,10 @@ def get_page(url: str):
     make a request to get the result
     using the requests library
     '''
-    print('getting page:')
-    print(url)
+    logger.info(f'get_page: getting page: {url}')
     result = requests.get(url, headers=HEADER)
     if result.status_code != 200:
-        print('no result')
+        logger.error(f'get_page: no result from requests')
         return None
     else:
         return result
@@ -178,10 +177,10 @@ def parse_result(request):
     the soup object
     '''
     if request:
-        print('result recieved - parsing data...')
+        logger.info('parse_result: result recieved - parsing data...')
         return BeautifulSoup(request.text, 'html.parser')
     else:
-        raise 'No data.  Request failed.'
+        logger.critical('parse_result: CRITCAL FAILURE! No data. Request failed.')
 
 def test_listing(url: str=link) -> dict:
     '''
@@ -233,7 +232,7 @@ def get_links(data):
     cards = [f'listing-card-list-item-{n}' for n in range(0,40)]
     lstings = data.find_all('li', attrs={'data-testid': cards})
     links = [lstings[n].find_all('a', attrs={'data-testid': ['listing-link']})[0]['href'] for n in range(0, len(lstings))]
-    logger.info(f'parsed {len(links)} links')
+    logger.info(f'get_links: parsed {len(links)} links')
     return links
 
 
@@ -241,7 +240,7 @@ def create_a_listing(lid, f, f2, url):
     '''
     instantiates the a_listing dataclass
     '''
-    logger.info(f'creating a listing for {lid}')
+    logger.debug(f'creating a listing for {lid}')
     return a_listing(int(lid),f['address'],f['price'],f['unit_type'],\
                      f['bedrooms'],f['bathrooms'],f2['Size (sqft)'],\
                      f['title_str'],f['util_headline'],f, f2, url)
@@ -256,7 +255,7 @@ def get_l_key(link):
 
 
 def process_links(links: list, dbh, csv_file: str='housing_list.csv',
-                  base: str='https://www.kijiji.ca') -> list:
+                  base: str='https://www.kijiji.ca') -> None:
     '''
     take a list of listing urls from a search
     these urls are missing the base str which needs to be added back
@@ -269,7 +268,9 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
     entry's downstream
     '''
     for link in links:
-        logger.info(f'working on: {link}') 
+        #interval = 1 + randint(1,3)
+        sleep(2)
+        logger.info(f'process_links: working on: {link}')
         f = None
         f2 = None
         l = None
@@ -280,10 +281,11 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
         data = parse_result(page) # parse with bs4
         # extract features
         try:
+            logger.info('process_links: attempting to get features')
             f, f2 = get_l_features(data)
             l = create_a_listing(key, f, f2, target)
         except Exception as e:
-            logger.error('could not extract features or create a_listing')
+            logger.error('process_links: could not extract features or create a_listing')
             logger.error(f'key: {key}, target: {target} f:{f} f2:{f2}')
             logger.error(e)
         if l:
@@ -293,24 +295,21 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
                 write_csv(csv_file, out)
                 #print(','.join(l.get_base_str()))
             except Exception as e:
-                logger.info('failed to write to csv')
+                logger.error('process_links: failed to write to csv')
                 logger.error(e)
             try:
                 structure = insert_l2db(l, dbh)
                 if structure == True:
-                    logger.info('already logged')
+                    logger.info('process_links: already logged')
                 else:
-                    logger.info('logged to db')
+                    logger.info('process_links: logged to db')
             except Exception as e:
-                logger.warning('failed to write to db')
+                logger.warning('process_links: failed to write to db')
                 logger.error(e)
                 logger.error(structure)
                 logger.error(l)
-            interval = 3 + randint(1,5)
-            sleep(interval)
         else:
-            logger.info('failed write to csv and database')
-
+            logger.error('process_links: failed write to csv and database')
 
 def get_l_details_dl(data) -> dict:
     '''
@@ -517,7 +516,7 @@ def insert_l2db(o, db_handle) -> dict:
 
 def check_key(LID, dbh) -> bool:
     sql_str = f'SELECT LID FROM Listing WHERE LID={LID} LIMIT 1'
-    row = db_handle.lookup_string(sql_str, None)
+    row = dbh.lookup_string(sql_str, None)
     return True if row else False
 
 
@@ -527,14 +526,16 @@ def process_pages(url_list: list, dbh=None) -> None:
     parses the html, trys to extract features
     and writes them to a csv file.
     '''
+
     for url in url_list:
-        logger.info(f'working on: {url}')
+        logger.debug(f'process_pages: working on: {url}')
         page = get_page(url)
         if page:
             data = parse_result(page)
             try:
-                logger.info('getting links')
+                logger.debug('process_pages: getting links')
                 link_list = get_links(data)
+                logger.info('process_pages: link_list derived')
                 '''
                  now process the links
                  - create listing objects
@@ -542,11 +543,11 @@ def process_pages(url_list: list, dbh=None) -> None:
                  - write to the database
                 '''
                 process_links(link_list, dbh)
-                logger.info(f'processed {len(listing_objs)} links')
+                logger.info(f'process_pages: processed {len(link_list)} links')
             except:
-                logger.error('failed link processing')
+                logger.error(f'process_pages: failed link processing for: {url}')
         else:
-            logger.error(f'failed request: {url}')
+            logger.error(f'process_pages: NO PAGE! failed request: {url}')
 
 
 def main(s: int=START, n: int=PAGES):
@@ -560,7 +561,7 @@ def main(s: int=START, n: int=PAGES):
         for root, parts in roots:
             url_list = generate_url_list(s,n,root,parts)
             process_pages(url_list, the_db)
-            print('taking a nap for 5 seconds')
+            logger.info(f'main: processed root: {root}')
             time.sleep(5)
     except:
         the_db.close()
