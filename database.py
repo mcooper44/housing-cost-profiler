@@ -132,7 +132,7 @@ class Database():
             self.cur.execute(string)
             rows = self.cur.fetchall()
 
-        if not rows: print(f'WARNING: NO DATABASE RESULT\nfrom {string}')
+        #if not rows: print(f'WARNING: NO DATABASE RESULT\nfrom {string}')
 
         return rows
 
