@@ -18,7 +18,7 @@ from database import Database
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='errors.log', encoding='utf-8', \
-                    level=logging.DEBUG)
+                    level=logging.INFO)
 
 # url is build from..
 BASE = 'https://www.kijiji.ca'
@@ -49,7 +49,7 @@ H_FILE = 'housing_list.csv'
 HDB = 'Housing.sqlite3'
 
 START = 2 # start for pages of listings - is always between 2 and n
-PAGES = 5 # end for range of pages of listings
+PAGES = 3 # end for range of pages of listings
 TDATE = str(date.today())
 
 
@@ -156,6 +156,7 @@ class a_listing:
     def get_today(self) -> tuple:
         return (self.listing_id, TDATE)
 
+
 def get_page(url: str):
     '''
     make a request to get the result
@@ -200,8 +201,7 @@ def test_listing(url: str=link) -> dict:
             'u': u_features,
             'data': data}
 
-def test_a_listing():
-        target = link
+def test_a_listing(target: str):
         key = get_l_key(target) # grab unique listing key
         page = get_page(target) # get html
         data = parse_result(page) # parse with bs4
@@ -268,8 +268,6 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
     entry's downstream
     '''
     for link in links:
-        #interval = 1 + randint(1,3)
-        sleep(2)
         logger.info(f'process_links: working on: {link}')
         f = None
         f2 = None
@@ -277,39 +275,43 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
         # get key, html and parse it
         target = f'{base}{link}'
         key = get_l_key(target) # grab unique listing key
-        page = get_page(target) # get html
-        data = parse_result(page) # parse with bs4
-        # extract features
-        try:
-            logger.info('process_links: attempting to get features')
-            f, f2 = get_l_features(data)
-            l = create_a_listing(key, f, f2, target)
-        except Exception as e:
-            logger.error('process_links: could not extract features or create a_listing')
-            logger.error(f'key: {key}, target: {target} f:{f} f2:{f2}')
-            logger.error(e)
-        if l:
-            out = l.get_base_str() + [TDATE]
-            structure = None
+        if check_key(key, dbh): # returns bool
+            logger.info(f'process_links: target {key} exists.  Skipping..')
+        else: # not in the db yet
+            page = get_page(target) # get html
+            data = parse_result(page) # parse with bs4
+            sleep(4) # courtesy pause
+            # extract features
             try:
-                write_csv(csv_file, out)
-                #print(','.join(l.get_base_str()))
+                logger.info('process_links: attempting to get features')
+                f, f2 = get_l_features(data)
+                l = create_a_listing(key, f, f2, target)
             except Exception as e:
-                logger.error('process_links: failed to write to csv')
+                logger.error('process_links: could not extract features or create a_listing')
+                logger.error(f'key: {key}, target: {target} f:{f} f2:{f2}')
                 logger.error(e)
-            try:
-                structure = insert_l2db(l, dbh)
-                if structure == True:
-                    logger.info('process_links: already logged')
-                else:
-                    logger.info('process_links: logged to db')
-            except Exception as e:
-                logger.warning('process_links: failed to write to db')
-                logger.error(e)
-                logger.error(structure)
-                logger.error(l)
-        else:
-            logger.error('process_links: failed write to csv and database')
+            if l:
+                out = l.get_base_str() + [TDATE]
+                structure = None
+                try:
+                    write_csv(csv_file, out)
+                    #print(','.join(l.get_base_str()))
+                except Exception as e:
+                    logger.error('process_links: failed to write to csv')
+                    logger.error(e)
+                try:
+                    structure = insert_l2db(l, dbh)
+                    if structure == True:
+                        logger.info('process_links: already logged')
+                    else:
+                        logger.info('process_links: logged to db')
+                except Exception as e:
+                    logger.warning('process_links: failed to write to db')
+                    logger.error(e)
+                    logger.error(structure)
+                    logger.error(l)
+            else:
+                logger.error('process_links: failed write to csv and database')
 
 def get_l_details_dl(data) -> dict:
     '''
@@ -557,11 +559,14 @@ def main(s: int=START, n: int=PAGES):
              (MAIN_STR,TARGETS[0])]
     the_db = Database(HDB)
     the_db.connect()
+    print('starting...')
     try:
         for root, parts in roots:
+            print(f'processing {root}')
             url_list = generate_url_list(s,n,root,parts)
+            print('begining to process pages')
             process_pages(url_list, the_db)
-            logger.info(f'main: processed root: {root}')
+            logger.info(f'main: processed root: {TDATE} {root}')
             time.sleep(5)
     except:
         the_db.close()
