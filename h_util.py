@@ -68,6 +68,8 @@ def process_utility(utility: list) -> tuple:
     returns a tuple so that these values can be integrated
     into a db insertion
     '''
+    if not utility: # a room sublet scenario
+        return (-1,-1,-1)
     d = {}
     lu = {'No': 0, 'Yes': 1}
     for utl in utility:
@@ -119,17 +121,19 @@ def process_bb(bb_str: str) -> float:
     i.e. Bedrooms 1 + Den or Bathrooms: 1.5
     and is present in the u data structure
     '''
-    fac, val = bb_str.split(':')
-    if fac == 'Bedrooms':
-        if 'Bachelor/Studio' in val:
-            return 0
-        if ' + Den' in val:
-            v = val.split('+')
-            return float(v[0].strip()) + 0.5
-        if '5+' in val:
-            return 5.25
-    return float(val.strip())
-
+    try:
+        fac, val = bb_str.split(':')
+        if fac == 'Bedrooms':
+            if 'Bachelor/Studio' in val:
+                return 0
+            if ' + Den' in val:
+                v = val.split('+')
+                return float(v[0].strip()) + 0.5
+            if '5+' in val:
+                return 5.25
+        return float(val.strip())
+    except:
+        return -1
 
 def process_yn(v: str) -> int:
     '''
@@ -143,4 +147,9 @@ def process_yn(v: str) -> int:
     if v == 'No':
         return 0
     return -1
+
+def parse_error_file(ef: str) -> list:
+    base = 'https://www.kijiji.ca'
+    with open(ef) as f:
+        return [base + l.strip() for l in f]
 
