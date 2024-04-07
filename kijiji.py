@@ -240,7 +240,7 @@ def create_a_listing(lid, f, f2, url):
     '''
     instantiates the a_listing dataclass
     '''
-    logger.debug(f'creating a listing for {lid}')
+    logger.debug(f'attempting to creating a listing for {lid}')
     return a_listing(int(lid),f['address'],f['price'],f['unit_type'],\
                      f['bedrooms'],f['bathrooms'],f2['Size (sqft)'],\
                      f['title_str'],f['util_headline'],f, f2, url)
@@ -322,6 +322,10 @@ def get_l_details_dl(data) -> dict:
     Smoking Permitted
     '''
     d = None
+    target_keys = ['Parking Included', 'Agreement Type',
+                   'Move-In Date', 'Pet Friendly', 'Size (sqft)',
+                   'Furnished', 'Air Conditioning',
+                   'Smoking Permitted']
     if data:
         d = data.find_all('dl')
     k, v = [], []
@@ -330,7 +334,11 @@ def get_l_details_dl(data) -> dict:
             k.append(dt.text.strip())
         for dd in dl.find_all('dd'):
             v.append(dd.text.strip())
-    return dict(zip(k,v))
+    collected = dict(zip(k,v))
+    for tk in target_keys:
+        if tk not in collected.keys():
+            collected[tk] = None
+    return collected
 
 
 def get_l_details_h4(data) -> dict:
@@ -347,16 +355,16 @@ def get_l_details_h4(data) -> dict:
     the listing
     '''
     h = None
-    _struct = {}
+    collected = {}
     if data:
         h = data.select('h4') # headings
     else:
-        #print('no headings')
+        logger.debug('no headings')
         return None
     for h4 in h: # print the Heading
-        #print(h4.text)
+        logger.debug(h4.text)
         heading = h4.text
-        _struct[heading] = []
+        collected[heading] = []
         ul = h4.parent.select('ul') # check the parent
         if len(ul) > 0:
             # Utilities uses SVG's in a UL
@@ -364,22 +372,22 @@ def get_l_details_h4(data) -> dict:
                 svg = ul[0].select('svg', attrs={'aria-label': True})
                 if svg: # we have labels
                     for tag in svg:
-                        _struct[heading].append(tag['aria-label'])
-                        #print('-', tag['aria-label'])
+                        collected[heading].append(tag['aria-label'])
+                        logger.debug('-', tag['aria-label'])
             except: # 'Additional Options'
-                _struct[heading].append('Nothing')
+                collected[heading].append('Nothing')
             # if li are present - iterate through them
             li = ul[0].select('li')
             if li and not svg:
                 for l in li:
                     if len(l) > 0:
-                        _struct[heading].append(l.text)
-                        #print('-', l.text)
+                        collected[heading].append(l.text)
+                        logger.debug('-', l.text)
             else:
                 # just one element ul
-                _struct[heading].append(ul[0].text)
-                #print('-', ul[0].text)
-    return _struct
+                collected[heading].append(ul[0].text)
+                logger.debug('-', ul[0].text)
+    return collected
 
 
 def get_l_title_details(data) -> dict:
@@ -393,12 +401,22 @@ def get_l_title_details(data) -> dict:
     r_price = re.compile('priceWrapper')
     r_add = re.compile('locationContainer')
     price = data.find_all('div', {'class': r_price})
+    '''
+    In appartment or house listings price will contain
+    price and utility details
+    In room for rent listings it will only list
+    the price.
+    '''
     if price:
         try:
-            for s in price[0]:
-                detail_str.append(s.text)
+            price_util = [s.text for s in price[0]]
+            if len(price_util) == 2:
+                detail_str.extend(price_util)
+            elif len(price_util) == 1:
+                detail_str.extend([price_util[0],'None'])
         except:
             detail_str.append('price error')
+            detail_str.append('no utility summary')
     # add title string
     try:
         detail_str.append(price[0].parent.select('h1')[0].text)
@@ -409,7 +427,7 @@ def get_l_title_details(data) -> dict:
     try:
         detail_str.append(address[1].select('span')[0].text)
     except:
-        detail_str.append('address error')
+        detail_str.append(None)
     # zip labels and values into a dictionary
     return dict(zip(details, detail_str))
 
@@ -428,7 +446,11 @@ def get_l_unit_type(data) -> dict:
     span = card[0].find_all('span', {'class': label})
     for d in span:
         detail_str.append(d.text)
-    return dict(zip(details, detail_str))
+    collected = dict(zip(details, detail_str))
+    if not collected: # it's a sublet room
+        return dict(zip(details, ['room', -1, -1]))
+    else:
+        return collected # house or standard apartment
 
 
 def write_csv(file_name: str, line: list) -> None:
