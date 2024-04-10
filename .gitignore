@@ -160,5 +160,7 @@ cython_debug/
 #.idea/
 
 # output files
-.csv
-
+*.csv
+*.sqlite3
+# bespoke config files
+gm_config.py
