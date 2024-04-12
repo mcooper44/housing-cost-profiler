@@ -49,7 +49,7 @@ H_FILE = 'housing_list.csv'
 HDB = 'Housing.sqlite3'
 
 START = 2 # start for pages of listings - is always between 2 and n
-PAGES = 3 # end for range of pages of listings
+PAGES = 5 # end for range of pages of listings
 TDATE = str(date.today())
 
 
@@ -520,7 +520,8 @@ def gen_l_struct(lo) -> dict:
 
 def insert_l2db(o, db_handle) -> dict:
     '''
-    insert into database a datastructure of
+    insert listing into database
+    place a datastructure of
     'table name': ([tuple of n data points],'(?,...n)')
     and using the db_handle.insert() method
     compose an INSERT string with 'table name'
@@ -533,13 +534,23 @@ def insert_l2db(o, db_handle) -> dict:
     done = check_key(o.listing_id, db_handle)
     if not done:
         db_struct = gen_l_struct(o)
-        db_handle.insert(db_struct,echo=False)
+        db_handle.insert(db_struct, echo=False)
         return db_struct
     else:
+        '''
+        seen = check_key(o.listing_id, db_handle, 'Observed')
+        if not seen:
+            log_observed(o.listing_id, db_handle)
+        '''
         return True
 
-def check_key(LID, dbh) -> bool:
-    sql_str = f'SELECT LID FROM Listing WHERE LID={LID} LIMIT 1'
+
+def log_observed(LID, db_handle):
+    db_handle.insert({'Observed': ([(LID, TDATE)],'(?,?)')})
+
+
+def check_key(LID, dbh, tbl='Listing') -> bool:
+    sql_str = f'SELECT LID FROM {tbl} WHERE LID={LID} LIMIT 1'
     row = dbh.lookup_string(sql_str, None)
     return True if row else False
 
