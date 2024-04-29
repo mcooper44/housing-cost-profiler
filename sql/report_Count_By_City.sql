@@ -1,0 +1,1 @@
+SELECT City, COUNT(City) as N FROM Address GROUP BY City HAVING COUNT(City) > 5

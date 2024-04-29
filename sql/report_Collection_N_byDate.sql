@@ -1,0 +1,1 @@
+SELECT COUNT(LID) as N_Collected, DateString as On_Date FROM Udate GROUP BY DateString

@@ -1,0 +1,4 @@
+SELECT  SUBSTR(PCode, 1, 3) AS FSA, COUNT(*) AS FSA_Count
+FROM    Address
+GROUP   BY SUBSTR(PCode, 1, 3)
+ORDER by FSA_Count DESC
