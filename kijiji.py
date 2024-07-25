@@ -49,7 +49,7 @@ H_FILE = 'housing_list.csv'
 HDB = 'Housing.sqlite3'
 
 START = 2 # start for pages of listings - is always between 2 and n
-PAGES = 5 # end for range of pages of listings
+PAGES = 8 # end for range of pages of listings
 TDATE = str(date.today())
 
 
@@ -604,3 +604,7 @@ def main(s: int=START, n: int=PAGES):
     except:
         the_db.close()
     print('job complete')
+
+if __name__ == '__main__':
+    main()
+
