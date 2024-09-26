@@ -17,8 +17,7 @@ from h_util import process_yn
 from database import Database
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='errors.log', encoding='utf-8', \
-                    level=logging.INFO)
+logging.basicConfig(filename='errors.log', encoding='utf-8', level=logging.INFO)
 
 # url is build from..
 BASE = 'https://www.kijiji.ca'
@@ -49,7 +48,7 @@ H_FILE = 'housing_list.csv'
 HDB = 'Housing.sqlite3'
 
 START = 2 # start for pages of listings - is always between 2 and n
-PAGES = 8 # end for range of pages of listings
+PAGES = 4 # end for range of pages of listings
 TDATE = str(date.today())
 
 
@@ -181,33 +180,7 @@ def parse_result(request):
         logger.info('parse_result: result recieved - parsing data...')
         return BeautifulSoup(request.text, 'html.parser')
     else:
-        logger.critical('parse_result: CRITCAL FAILURE! No data. Request failed.')
-
-def test_listing(url: str=link) -> dict:
-    '''
-    grab a listing and test the functions
-    to parse the page and pull out the key
-    features we are looking for
-    '''
-    page = get_page(url)
-    data = parse_result(page)
-    dl_features = get_l_details_dl(data)
-    h4_features = get_l_details_h4(data)
-    t_features = get_l_title_details(data)
-    u_features = get_l_unit_type(data)
-    return {'dl': dl_features,
-            'h4': h4_features,
-            't': t_features,
-            'u': u_features,
-            'data': data}
-
-def test_a_listing(target: str):
-        key = get_l_key(target) # grab unique listing key
-        page = get_page(target) # get html
-        data = parse_result(page) # parse with bs4
-        # extract features
-        f, f2 = get_l_features(data)
-        return create_a_listing(key, f, f2, target)
+        logger.error('parse_result: CRITCAL FAILURE! No data. Request failed.')
 
 
 def get_l_features(data):
@@ -233,6 +206,8 @@ def get_links(data):
     lstings = data.find_all('li', attrs={'data-testid': cards})
     links = [lstings[n].find_all('a', attrs={'data-testid': ['listing-link']})[0]['href'] for n in range(0, len(lstings))]
     logger.info(f'get_links: parsed {len(links)} links')
+    for l in links:
+        logger.info(f'{l}')
     return links
 
 
@@ -273,19 +248,27 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
         f2 = None
         l = None
         # get key, html and parse it
-        target = f'{base}{link}'
+        #target = f'{base}{link}'
+        target = link
+        logger.debug(f'process_links: working on target: ')
+        logger.debug(f'{target}')
         key = get_l_key(target) # grab unique listing key
+        logger.debug(f'derived key: {key}')
         if check_key(key, dbh): # returns bool
             logger.info(f'process_links: target {key} exists.  Skipping..')
         else: # not in the db yet
+            logger.debug('attempting to get page and data...')
             page = get_page(target) # get html
             data = parse_result(page) # parse with bs4
+            logger.debug('page and data derived.  Sleeping...')
             sleep(4) # courtesy pause
+            logger.debug('awake')
             # extract features
             try:
                 logger.info('process_links: attempting to get features')
                 f, f2 = get_l_features(data)
                 l = create_a_listing(key, f, f2, target)
+                logging.debug('process_links: features found')
             except Exception as e:
                 logger.error('process_links: could not extract features or create a_listing')
                 logger.error(f'key: {key}, target: {target} f:{f} f2:{f2}')
@@ -294,8 +277,9 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
                 out = l.get_base_str() + [TDATE]
                 structure = None
                 try:
+                    logger.debug('trying to write to csv')
                     write_csv(csv_file, out)
-                    #print(','.join(l.get_base_str()))
+                    logger.debug(f"wrote: {','.join(l.get_base_str())}")
                 except Exception as e:
                     logger.error('process_links: failed to write to csv')
                     logger.error(e)
@@ -312,6 +296,8 @@ def process_links(links: list, dbh, csv_file: str='housing_list.csv',
                     logger.error(l)
             else:
                 logger.error('process_links: failed write to csv and database')
+                logger.error('could not create listing')
+
 
 def get_l_details_dl(data) -> dict:
     '''
@@ -373,7 +359,7 @@ def get_l_details_h4(data) -> dict:
                 if svg: # we have labels
                     for tag in svg:
                         collected[heading].append(tag['aria-label'])
-                        logger.debug('-', tag['aria-label'])
+                        logger.debug(f"- {tag['aria-label']}")
             except: # 'Additional Options'
                 collected[heading].append('Nothing')
             # if li are present - iterate through them
@@ -382,11 +368,11 @@ def get_l_details_h4(data) -> dict:
                 for l in li:
                     if len(l) > 0:
                         collected[heading].append(l.text)
-                        logger.debug('-', l.text)
+                        logger.debug(f'- {l.text}')
             else:
                 # just one element ul
                 collected[heading].append(ul[0].text)
-                logger.debug('-', ul[0].text)
+                logger.debug(f'- {ul[0].text}')
     return collected
 
 
@@ -564,11 +550,13 @@ def process_pages(url_list: list, dbh=None) -> None:
 
     for url in url_list:
         logger.debug(f'process_pages: working on: {url}')
+        logger.debug('...')
         page = get_page(url)
         if page:
             data = parse_result(page)
+            logger.debug('retrieved page')
             try:
-                logger.debug('process_pages: getting links')
+                logger.info('process_pages: getting links')
                 link_list = get_links(data)
                 logger.info('process_pages: link_list derived')
                 '''
@@ -580,7 +568,8 @@ def process_pages(url_list: list, dbh=None) -> None:
                 process_links(link_list, dbh)
                 logger.info(f'process_pages: processed {len(link_list)} links')
             except:
-                logger.error(f'process_pages: failed link processing for: {url}')
+                logger.error('process_pages: failed link processing for:')
+                logger.error(url)
         else:
             logger.error(f'process_pages: NO PAGE! failed request: {url}')
 
@@ -592,7 +581,7 @@ def main(s: int=START, n: int=PAGES):
              (MAIN_STR,TARGETS[0])]
     the_db = Database(HDB)
     the_db.connect()
-    print('starting...')
+    print(f'{TDATE} starting...')
     try:
         for root, parts in roots:
             print(f'processing {root}')
@@ -600,7 +589,7 @@ def main(s: int=START, n: int=PAGES):
             print('begining to process pages')
             process_pages(url_list, the_db)
             logger.info(f'main: processed root: {TDATE} {root}')
-            time.sleep(5)
+            sleep(5)
     except:
         the_db.close()
     print('job complete')
