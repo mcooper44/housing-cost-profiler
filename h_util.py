@@ -94,12 +94,24 @@ def process_address_usa(address: str) -> tuple:
     it seems to work much more reliably than
     other options - however,ez_address_parser is still
     an option.
+
+    the tag method uses the tag mapping to consolidate
+    the different tags into a more compact representation.
+    it returns a tuple and a string tag describing the type
+    or quality of the parsed address.  This tag is not needed
+    so is suppressed with _
     '''
-    pass
+    tagged_address, _ = usad.tag(address, tag_mapping = USAD_MAPPING)
+    return (tagged_address.get('address1', ''), tagged_address.get('city', ''),
+            tagged_address.get('province', ''),
+            tagged_address.get('postal_code', ''))
+
 
 def process_address(address: str, parser: str = 'ez') -> tuple:
     '''
     Address is stored as a string in the a_listing data class.
+
+    This function wraps the two address parsing functions
 
     use parser = 'ez' to use ez_address_parser to process the
     address string into labelled (element, label pairs)
@@ -113,7 +125,7 @@ def process_address(address: str, parser: str = 'ez') -> tuple:
     if parser == 'ez':
         return process_address_ez(address)
     if parser == 'usa':
-        pass
+        return process_address_usa(address)
 
 def process_utility(utility: list) -> tuple:
     '''
