@@ -33,10 +33,9 @@ def get_sa(lst: list) -> Union[str, None]:
     return ' '.join(s) if s else None
 
 
-def process_address(address: list) -> tuple:
+def process_address_ez(address: str) ->tuple:
     '''
-    leverage ez-address-parser to process the address string
-    into labelled (element, label pairs)
+    leverages ez_address_parser
 
     call the helper functions process_ap and get_sa to separate
     out the elements needed for the database
@@ -50,8 +49,27 @@ def process_address(address: list) -> tuple:
     pcode = process_ap(t, 'PostalCode')
     prov = process_ap(t, 'Province', 1)
     street = get_sa(t)
+
     return (street, city, prov, pcode)
 
+
+def process_address(address: str, parser: str = 'ez') -> tuple:
+    '''
+    Address is stored as a string in the a_listing data class.
+
+    use parser = 'ez' to use ez_address_parser to process the
+    address string into labelled (element, label pairs)
+
+    ez-address-parser has some challenges with badly formatted
+    address strings however
+
+    use parser = 'usa' to use usaddress which seems to be more
+    reliable and robust in parsing address strings.
+    '''
+    if parser == 'ez':
+        return process_address_ez(address)
+    if parser == 'usa':
+        pass
 
 def process_utility(utility: list) -> tuple:
     '''
